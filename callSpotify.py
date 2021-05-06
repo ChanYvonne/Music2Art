@@ -1,4 +1,5 @@
 import spotipy
+import json
 # To access authorised Spotify data
 from spotipy.oauth2 import SpotifyClientCredentials
 
@@ -7,10 +8,10 @@ client_secret = '{client_secret}'
 
 client_credentials_manager = SpotifyClientCredentials(
     client_id=client_id, client_secret=client_secret)
-# spotify object to access API
-sp = spotipy.Spotify(auth='{OAuth_Token}',
+# spotify object to access APIBQDAPTRBDFmfEX0bq0z_uXuBatyQ6EDJvbg
+sp = spotipy.Spotify(auth='{Auth_token}',
                      client_credentials_manager=client_credentials_manager)
-name = "Taylor Swift"  # chosen artist
+name = "Walk the Moon"  # chosen artist
 result = sp.search(name)  # search query
 # print(result['tracks']['items'][0]['artists'])
 
@@ -28,14 +29,13 @@ for i in range(2):
     album_uris.append(sp_albums['items'][i]['uri'])
 
 print(album_names)
-print(album_uris)
+# print(album_uris)
 # Keep names and uris in same order to keep track of duplicate albums
 
 spotify_albums = {}
-album_count = 0
 
 
-def album_songs(uri):
+def album_songs(uri, alb_count):
     album = uri  # assign album uri to a_name
 
     spotify_albums[album] = {}  # Creates dictionary for that specific album
@@ -51,7 +51,7 @@ def album_songs(uri):
 
     for n in range(len(tracks['items'])):  # for each song track
         # append album name tracked via album_count
-        spotify_albums[album]['album'].append(album_names[album_count])
+        spotify_albums[album]['album'].append(album_names[alb_count])
         spotify_albums[album]['track_number'].append(
             tracks['items'][n]['track_number'])
         spotify_albums[album]['id'].append(tracks['items'][n]['id'])
@@ -74,12 +74,13 @@ def audio_features(album):
 
     trackIds = []
     for track in spotify_albums[album]['id']:
-        trackIds.append(track)
+        trackIds.append(str(track))
 
-    print(trackIds)
+    # print(trackIds)
     # pull audio features per track
     features = sp.audio_features(trackIds)
     # print(features)
+    print(json.dumps(features, indent=4))
 
     # analysis = sp.audio_analysis(trackIds[0])
     # print(analysis)
@@ -102,16 +103,24 @@ def audio_features(album):
     # popularity is stored elsewhere
     pop = sp.track(track)
     spotify_albums[album]['popularity'].append(pop['popularity'])
+    print(pop)
+
+    # print(spotify_albums[album])
 
 
-for i in album_uris:  # each album
-    album_songs(i)
-    print("Album " + str(album_names[album_count]) +
-          " songs has been added to spotify_albums dictionary")
-    album_count += 1  # Updates album count once all tracks have been added
+def main():
+    album_count = 0
+    for i in album_uris:  # each album
+        album_songs(i, album_count)
+        print("Album " + str(album_names[album_count]) +
+              " songs has been added to spotify_albums dictionary")
+        album_count += 1  # Updates album count once all tracks have been added
 
-for i in spotify_albums:
-    audio_features(i)
+    for i in spotify_albums:
+        audio_features(i)
+
+    # print(spotify_albums)
 
 
-# print(spotify_albums)
+if __name__ == "__main__":
+    main()
