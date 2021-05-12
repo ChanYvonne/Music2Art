@@ -2,6 +2,14 @@ import spotipy
 import json
 # To access authorised Spotify data
 from spotipy.oauth2 import SpotifyClientCredentials
+import sounddevice as sd
+from scipy.io.wavfile import write
+import wavio
+from pydub import AudioSegment
+import os
+from ShazamAPI import Shazam
+from serial import Serial
+import time
 
 client_id = 'f0338d1fd79f4310835cede197372d6'
 client_secret = '1e395ecaf45f488fa539560d57963bf6'
@@ -9,10 +17,10 @@ client_secret = '1e395ecaf45f488fa539560d57963bf6'
 client_credentials_manager = SpotifyClientCredentials(
     client_id=client_id, client_secret=client_secret)
 # spotify object to access APIBQDAPTRBDFmfEX0bq0z_uXuBatyQ6EDJvbg
-sp = spotipy.Spotify(auth='BQBGZANA7n2ClhCZrupwbsY3py8CfSwqHeaYpgQ8cHB7_EfPD0bBvLI15saUQUh7oRV95kHLfUOJAILnFs0cMh_kW4F5n8YTTcG2LVVjtqF6dP4pYp78hy7Jf8l7aUugADIdpgrYBMnoOQ',
+sp = spotipy.Spotify(auth='BQCztlGTWtplwudW27Pccs2toRB-ZR6UWczAivtD0z4Du6tBhnsVtsmhMrJcvmBYWleKaa3G8lspQk9xZSI49OmFmWYcwltAf1GpY5HXTu8Q7CYPcgtFpTsluaTofscCzuLp7ujg0USbTwlWoU10185eIYxlfDHCUJUktqX35UeQx3p1m74',
                      client_credentials_manager=client_credentials_manager)
 
-
+# arduino = Serial(port='/dev/cu.usbserial-021FEBDC', baudrate=115200, timeout=.1)
 def get_track_uri(track, artist):
     result = sp.search(track + " " + artist, limit=10, type='track,artist')
     track_uri = result['tracks']['items'][0]['uri']
@@ -53,15 +61,49 @@ def get_audio_analysis(track_uri):
     # print(len(sections))
     print(len(segments))
 
+def record_and_recognize_song():
+    print("Listening!")
+    # arduino.write(bytes("Listening", 'utf-8'))
+    fs = 44100  # Sample rate
+    seconds = 5  # Duration of recording
+
+    myrecording = sd.rec(int(seconds * fs), samplerate=fs, channels=1)
+
+    sd.wait()  # Wait until recording is finished
+    write('output1.wav', fs, myrecording)  # Save as WAV file 
+    wavio.write("myfile1.wav", myrecording, fs, sampwidth=2)
+    sound = AudioSegment.from_wav('myfile1.wav')
+    sound.export('myfile.mp3', format='mp3')
+    mp3_file_content_to_recognize = open('myfile.mp3', 'rb').read()
+
+    shazam = Shazam(mp3_file_content_to_recognize)
+    recognize_generator = shazam.recognizeSong()
+    song = None
+    while song is None:
+        song = next(recognize_generator)
+    print(song)
+    title = song[1]['track']['title']
+    artist = song[1]['track']['subtitle']
+    print(artist, title)
+    os.remove("myfile.mp3")
+    os.remove("myfile1.wav")
+    os.remove("output1.wav") 
+    return artist, title
+
+def send_strokes_to_arduino():
+    print("Sending Strokes!")
 
 def main():
     # Process is getting albums from artist, getting songs from album, then getting the song
 
-    artist = "Taylor Swift"  # chosen artist
-    track = "Mr. Perfectly Fine"
+    artist , track = record_and_recognize_song()
+    #artist, track = "Queen" , "Another One Bites The Dust"
     track_uri = get_track_uri(track, artist)
     track_info = get_audio_features(str(track_uri))
     get_audio_analysis(track_uri)
+
+    send_strokes_to_arduino()
+
 
 
 if __name__ == "__main__":
