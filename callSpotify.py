@@ -9,12 +9,13 @@ client_secret = '1e395ecaf45f488fa539560d57963bf6'
 client_credentials_manager = SpotifyClientCredentials(
     client_id=client_id, client_secret=client_secret)
 # spotify object to access APIBQDAPTRBDFmfEX0bq0z_uXuBatyQ6EDJvbg
-sp = spotipy.Spotify(auth='BQBGZANA7n2ClhCZrupwbsY3py8CfSwqHeaYpgQ8cHB7_EfPD0bBvLI15saUQUh7oRV95kHLfUOJAILnFs0cMh_kW4F5n8YTTcG2LVVjtqF6dP4pYp78hy7Jf8l7aUugADIdpgrYBMnoOQ',
+sp = spotipy.Spotify(auth='BQA57OGFOkOYt3cEPNuYuF84DUloZ1t0cRVqK8xCapN-3oS7wCdGfGTqVQOMFPZrKm0Rpwn1bDTG7SLEzj6yZEk_KMsvJijYo0YLezXcs69xuQLSC_gwpbxfHbugfW3wh1n1ed0SHzCg-g',
                      client_credentials_manager=client_credentials_manager)
 
 
 def get_track_uri(track, artist):
-    result = sp.search(track + " " + artist, limit=10, type='track,artist')
+    result = sp.search(track + " " + artist, limit=5, type='track,artist')
+    print(result)
     track_uri = result['tracks']['items'][0]['uri']
     # print(track_uri)
     # maybe helpful later
@@ -49,16 +50,16 @@ def get_audio_analysis(track_uri):
     sections = analysis['sections']
     segments = analysis['segments']
 
-    print(json.dumps(sections, indent=4))
+    # print(json.dumps(sections, indent=4))
     # print(len(sections))
-    print(len(segments))
+    # print(len(segments))
 
 
 def main():
     # Process is getting albums from artist, getting songs from album, then getting the song
 
-    artist = "Taylor Swift"  # chosen artist
-    track = "Mr. Perfectly Fine"
+    artist = "Olivia Rodrigo"  # chosen artist
+    track = "Driver's License"
     track_uri = get_track_uri(track, artist)
     track_info = get_audio_features(str(track_uri))
     get_audio_analysis(track_uri)
