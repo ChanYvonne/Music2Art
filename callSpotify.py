@@ -19,8 +19,12 @@ client_credentials_manager = SpotifyClientCredentials(
 # spotify object to access APIBQDAPTRBDFmfEX0bq0z_uXuBatyQ6EDJvbg
 sp = spotipy.Spotify(auth='BQCztlGTWtplwudW27Pccs2toRB-ZR6UWczAivtD0z4Du6tBhnsVtsmhMrJcvmBYWleKaa3G8lspQk9xZSI49OmFmWYcwltAf1GpY5HXTu8Q7CYPcgtFpTsluaTofscCzuLp7ujg0USbTwlWoU10185eIYxlfDHCUJUktqX35UeQx3p1m74',
                      client_credentials_manager=client_credentials_manager)
+arduino = None
 
 # arduino = Serial(port='/dev/cu.usbserial-021FEBDC', baudrate=115200, timeout=.1)
+
+
+
 def get_track_uri(track, artist):
     result = sp.search(track + " " + artist, limit=10, type='track,artist')
     track_uri = result['tracks']['items'][0]['uri']
@@ -84,6 +88,7 @@ def record_and_recognize_song():
     print(song)
     title = song[1]['track']['title']
     artist = song[1]['track']['subtitle']
+
     print(artist, title)
     os.remove("myfile.mp3")
     os.remove("myfile1.wav")
@@ -92,6 +97,7 @@ def record_and_recognize_song():
 
 def send_strokes_to_arduino():
     print("Sending Strokes!")
+    
 
 def main():
     # Process is getting albums from artist, getting songs from album, then getting the song
