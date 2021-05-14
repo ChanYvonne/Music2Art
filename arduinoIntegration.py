@@ -12,10 +12,10 @@ import matplotlib.pyplot as plt
 import random
 import time
 
+
 from scipy.interpolate import interp1d
 
-# arduino = Serial(port='/dev/cu.usbserial-021FEBDC',
-#                  baudrate=115200, timeout=.1)
+arduino = Serial(port='/dev/cu.usbserial-021FEBDC', baudrate=115200, timeout=.1)
 fps = 60
 time_delta = 1./fps
 
@@ -115,7 +115,8 @@ def generate_coordinates(loudness, pitches, timbre):
     # print(len(x_timbre))
 
     # filter so it's not as many points -- assumes all lists are the same length
-    for i in range(len(x_pitch)/60):
+    print(x_pitch)
+    for i in range(math.floor(len(x_pitch)/60)):
         index = random.randrange(0, len(x_pitch))
         while(index in visited):
             index = random.randrange(0, len(x_pitch))
@@ -124,7 +125,7 @@ def generate_coordinates(loudness, pitches, timbre):
         y_timbre_f.append(y_timbre[index])
 
     visited = []
-    for i in range(len(x_timbre)/60):
+    for i in range(math.floor(len(x_timbre)/60)):
         index = random.randrange(0, len(x_pitch))
         while(index in visited):
             index = random.randrange(0, len(x_pitch))
@@ -284,10 +285,11 @@ def compile_coordinates(brushes, coordinates, colors):
     # switch to using a brush: S,4.
     # divides the coordinates into 6 sections and switches brush 5 times
     coor_count = 0
+    print(len(coordinates))
     for i in range(len(coordinates) + len(brushes)):
         if i % section == 0:
             # print(i/section)
-            all_commands.append("S," + str(brushes[i / section][0]) + ".")
+            all_commands.append("S," + str(brushes[math.floor(i / section)][0]) + ".")
         else:
             all_commands.append(coordinates[coor_count])
             coor_count += 1
@@ -301,9 +303,16 @@ def compile_coordinates(brushes, coordinates, colors):
 
 def send_commands(cmds):
     for cmd in cmds:
+        print(cmd)
+        notDone = True
         arduino.write(bytes(cmd, 'utf-8'))
         time.sleep(time_delta)
-    data = arduino.readline()
+        while(notDone):
+            data = arduino.readline()
+            if(str(data).includes("Done")):
+                notDone = True
+                time.sleep(time_delta)
+                
     return data
 
 
@@ -319,8 +328,7 @@ def main():
     analysis = spotify_info[1]
     duration = spotify_info[2] / 1000
     brushes = select_brushes(duration)
-    coordinates = generate_coordinates(
-        analysis['loudness'], analysis['pitches'], analysis['timbre'])
+    coordinates = generate_coordinates(analysis['loudness'], analysis['pitches'], analysis['timbre'])
     loud_vs_pitch = coordinates[0]
     loud_vs_timbre = coordinates[1]
     timbre_vs_pitch = coordinates[2]
@@ -332,9 +340,10 @@ def main():
     palette = select_color_palettes(features)
     all_commands = compile_coordinates(brushes, all_coordinates, palette)
 
-    # while True:
-    #     value = send_commands(all_commands)
-    #     print(value)
+    print("sending")
+    while True:
+        value = send_commands(all_commands)
+        print(value)
 
     # print(len(coordinates))
     # print(coordinates[:100])
