@@ -77,7 +77,7 @@ def generate_coordinates(loudness, pitches, timbre):
     max_timbre = max(timbre)
     min_timbre = min(timbre)
 
-    length = 4540
+    length = 4403
     width = 3162
 
     loud_scale = interp1d([min_loud, max_loud], [0, width]
@@ -109,24 +109,42 @@ def generate_coordinates(loudness, pitches, timbre):
     y_timbre_f = []
     y_loud_f = []
 
+    visited = []
+
+    # print(len(x_pitch))
+    # print(len(x_timbre))
+
     # filter so it's not as many points -- assumes all lists are the same length
-    for i in range(len(x_pitch)/2):
+    for i in range(len(x_pitch)/80):
         index = random.randrange(0, len(x_pitch))
+        while(index in visited):
+            index = random.randrange(0, len(x_pitch))
+        visited.append(index)
         x_pitch_f.append(x_pitch[index])
-        y_loud_f.append(y_loud[index])
         y_timbre_f.append(y_timbre[index])
 
-    for i in range(len(x_timbre)/2):
-        index = random.randrange(0, len(x_timbre))
+    visited = []
+    for i in range(len(x_timbre)/80):
+        index = random.randrange(0, len(x_pitch))
+        while(index in visited):
+            index = random.randrange(0, len(x_pitch))
+        visited.append(index)
         x_timbre_f.append(x_timbre[index])
         y_loud_f.append(y_loud[index])
+
+    print(len(x_pitch_f))
+    print(len(x_timbre_f))
+    print(len(y_loud_f))
+    print(len(y_timbre_f))
 
     # stimulate what it looks like
     # plt.scatter(x_pitch, y_loud, c='red')
     # plt.scatter(x_pitch, y_timbre, c='green')
     # plt.scatter(x_timbre, y_loud, c='blue')
-    # plt.axline((x1, y1), (x2, y2))
-    # plt.show()
+    plt.plot(x_pitch_f, y_loud_f, c='red')
+    plt.plot(x_pitch_f, y_timbre_f, c='green')
+    plt.plot(x_timbre_f, y_loud_f, c='blue')
+    plt.show()
 
     loud_v_pitch = select_strokes(x_pitch_f, y_loud_f)
     loud_v_timbre = select_strokes(x_timbre_f, y_loud_f)
@@ -151,8 +169,12 @@ def select_strokes(x_cor, y_cor):
         if (stroke == 1):
             coor = box_pattern(x_cor[i], y_cor[i], x_cor[i+1], y_cor[i+1])
         elif (stroke == 2):
-            coor = zigzag(x_cor[i], y_cor[i], x_cor[i+1],
-                          y_cor[i+1], y_cor[i-20:i+20])
+            if (i < 10):
+                coor = zigzag(x_cor[i], y_cor[i], x_cor[i+1],
+                              y_cor[i+1], y_cor[i:i+20])
+            else:
+                coor = zigzag(x_cor[i], y_cor[i], x_cor[i+1],
+                              y_cor[i+1], y_cor[i-10:i+10])
         else:
             coor = [x_cor[i], y_cor[i]]
         new_x_coor.append(coor[0])
@@ -198,7 +220,7 @@ def select_color_palettes(features):
 
 
 def box_pattern(x1, y1, x2, y2):
-    num_squares = (x2 - x1) / 2
+    num_squares = int((x2 - x1) / 2)
     x_cor = [x1]
     y_cor = [y1]
     for i in range(1, num_squares+1):
@@ -215,18 +237,19 @@ def box_pattern(x1, y1, x2, y2):
 
 def zigzag(x1, y1, x2, y2, scale):
     normal = interp1d([min(scale), max(scale)], [0, 1])
-    range = x2 - x1
+    y_range = x2 - x1
     domain = y2 - y1
     x_step = domain / 5
-    y_step = range / 5
+    y_step = y_range / 5
     x_cor = [x1]
     y_cor = [y1]
     for i in range(1, 6):
         x_cor.append(x1 + x_step*i)
+        scale_index = random.randrange(0, len(scale))
         if (i % 2 == 0):
-            y_cor.append(y1 + normal(y_step*i))
+            y_cor.append(y1 + normal(scale[scale_index])*y_step*i)
         else:
-            y_cor.append(y1 - normal(y_step*i))
+            y_cor.append(y1 - normal(scale[scale_index])*y_step*i)
 
     x_cor.append(x2)
     y_cor.append(y2)
@@ -234,8 +257,9 @@ def zigzag(x1, y1, x2, y2, scale):
     return [x_cor, y_cor]
 
 
-def compile_coordiinates(brushes, coordinates, colors):
-    section = len(coordinates) / 6
+def compile_coordinates(brushes, coordinates, colors):
+    section = len(coordinates) / 5
+    # print(section)
 
     all_commands = []
 
@@ -248,7 +272,8 @@ def compile_coordiinates(brushes, coordinates, colors):
     coor_count = 0
     for i in range(len(coordinates) + len(brushes)):
         if i % section == 0:
-            all_commands.append("S," + brushes[i] + ".")
+            # print(i/section)
+            all_commands.append("S," + str(brushes[i / section][0]) + ".")
         else:
             all_commands.append(coordinates[coor_count])
             coor_count += 1
@@ -256,6 +281,7 @@ def compile_coordiinates(brushes, coordinates, colors):
     # to stop all painting
     all_commands.append("X.")
 
+    # print(all_commands)
     return all_commands
 
 
@@ -271,9 +297,9 @@ def main():
     # Process is getting albums from artist, getting songs from album, then getting the song
 
     # artist, track = record_and_recognize_song()
-    #artist, track = "Queen" , "Another One Bites The Dust"
-    artist = "Borns"  # chosen artist
-    track = "Electric Love"
+    # artist, track = "Queen" , "Another One Bites The Dust"
+    artist = "Olivia Rodrigo"  # chosen artist
+    track = "Driver's License"
     spotify_info = get_spotify_info(artist, track)
     features = spotify_info[0]
     analysis = spotify_info[1]
@@ -285,14 +311,16 @@ def main():
     loud_vs_timbre = coordinates[1]
     timbre_vs_pitch = coordinates[2]
     all_coordinates = []
-    all_coordinates.append(loud_vs_pitch).append(
-        loud_vs_timbre).append(timbre_vs_pitch)
+    all_coordinates.extend(loud_vs_pitch)
+    all_coordinates.extend(loud_vs_timbre)
+    all_coordinates.extend(timbre_vs_pitch)
+    print(len(all_coordinates))
     palette = select_color_palettes(features)
-    all_commands = compile_coordiinates(brushes, all_coordinates, palette)
+    all_commands = compile_coordinates(brushes, all_coordinates, palette)
 
-    while True:
-        value = send_commands(all_commands)
-        print(value)
+    # while True:
+    #     value = send_commands(all_commands)
+    #     print(value)
 
     # print(len(coordinates))
     # print(coordinates[:100])
