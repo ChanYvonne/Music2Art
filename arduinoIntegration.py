@@ -10,11 +10,14 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 import random
+import time
 
 from scipy.interpolate import interp1d
 
 # arduino = Serial(port='/dev/cu.usbserial-021FEBDC',
 #                  baudrate=115200, timeout=.1)
+fps = 60
+time_delta = 1./fps
 
 
 def record_and_recognize_song():
@@ -175,7 +178,11 @@ def compile_coordiinates(brushes, coordinates, colors):
 
 
 def send_commands(cmds):
-    arduino.write(bytes("M,100,200.", 'utf-8'))
+    for cmd in cmds:
+        arduino.write(bytes(cmd, 'utf-8'))
+        time.sleep(time_delta)
+    data = arduino.readline()
+    return data
 
 
 def main():
@@ -200,9 +207,14 @@ def main():
         loud_vs_timbre).append(timbre_vs_pitch)
     palette = select_color_palettes(features)
     all_commands = compile_coordiinates(brushes, all_coordinates, palette)
-    send_commands(all_commands)
+
+    while True:
+        value = send_commands(all_commands)
+        print(value)
 
     # print(len(coordinates))
     # print(coordinates[:100])
+
+
 if __name__ == "__main__":
     main()
