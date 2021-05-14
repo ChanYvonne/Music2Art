@@ -7,6 +7,9 @@ import os
 # from ShazamAPI import Shazam
 from serial import Serial
 import math
+import numpy as np
+import matplotlib.pyplot as plt
+import random
 
 from scipy.interpolate import interp1d
 
@@ -49,11 +52,13 @@ def send_strokes_to_arduino():
 
 
 def get_spotify_info(artist, track):
-    track_uri = callSpotify.get_track_uri(track, artist)['uri']
-    track_info = callSpotify.get_audio_features(str(track_uri))
-    track_analysis = callSpotify.get_audio_analysis(track_uri)
+    track_info = callSpotify.get_track_uri(track, artist)
+    uri = track_info['uri']
+    length = float(track_info['length'])
+    track_features = callSpotify.get_audio_features(str(uri))
+    track_analysis = callSpotify.get_audio_analysis(uri)
 
-    return [track_info, track_analysis]
+    return [track_features, track_analysis, length]
 
 
 def truncate(number, digits):
@@ -61,30 +66,115 @@ def truncate(number, digits):
     return math.trunc(stepper * number) / stepper
 
 
-def loudness_pitch_coordinates(loudness, pitches):
+def generate_coordinates(loudness, pitches, timbre):
     max_loud = max(loudness)
     min_loud = min(loudness)
     max_pitch = max(pitches)
     min_pitch = min(pitches)
+    max_timbre = max(timbre)
+    min_timbre = min(timbre)
 
-    loud_scale = interp1d([min_loud, max_loud], [0, 160]
+    loud_scale = interp1d([min_loud, max_loud], [0, 3162]
                           )  # [min, max] of x-axis
     pitch_scale = interp1d([min_pitch, max_pitch], [
-                           0, 110])  # [min, max] of y-axis
+                           0, 4540])  # [min, max] of y-axis
+    timbre_scale_x = interp1d([min_timbre, max_timbre], [
+        0, 4540])  # another x- axis option
 
-    command_strings = []
+    timbre_scale_y = interp1d([min_timbre, max_timbre], [
+        0, 3162])  # another y- axis option
+
+    x_pitch = []
+    x_timbre = []
+    y_timbre = []
+    y_loud = []
 
     for y in loud_scale(loudness):
-        for x in pitch_scale(pitches):
-            x_cor = truncate(x, 3)
-            y_cor = truncate(y, 3)
-            command_strings.append(
-                "M," + str(x_cor) + "," + str(y_cor) + ".")
+        y_loud.append(truncate(y, 3))
+    for x in pitch_scale(pitches):
+        x_pitch.append(truncate(x, 3))
+    for x in timbre_scale_x(timbre):
+        x_timbre.append(truncate(x, 3))
+    for y in timbre_scale_y(timbre):
+        y_timbre.append(truncate(y, 3))
 
-    return command_strings
+    # stimulate what it looks like
+    # plt.scatter(x_pitch, y_loud, c='red')
+    # plt.scatter(x_pitch, y_timbre, c='green')
+    # plt.scatter(x_timbre, y_loud, c='blue')
+    # plt.show()
+
+    loud_pitch = []  # in y vs. x format
+    for y in y_loud:
+        for x in x_pitch:
+            loud_pitch.append(
+                "M," + str(x) + "," + str(y) + ".")
+
+    loud_timbre = []
+    for y in y_loud:
+        for x in x_timbre:
+            loud_timbre.append(
+                "M," + str(x) + "," + str(y) + ".")
+
+    timbre_pitch = []
+    for y in y_timbre:
+        for x in x_pitch:
+            timbre_pitch.append(
+                "M," + str(x) + "," + str(y) + ".")
+
+    return [loud_pitch, loud_timbre, timbre_pitch]
 
 
-def sendCommands():
+def select_brushes(duration):
+    time_sect = duration / 6.0
+    first_brush = [random.randrange(1, 3), 0.0]
+    second_brush = [random.randrange(4, 6), time_sect]
+    third_brush = [random.randrange(1, 4), time_sect * 2]
+    fourth_brush = [random.randrange(3, 6), time_sect * 3]
+    fifth_brush = [random.randrange(4, 6), time_sect * 4]
+    sixth_brush = [random.randrange(2, 5), time_sect * 5]
+
+    return [first_brush, second_brush, third_brush, fourth_brush, fifth_brush, sixth_brush]
+
+
+def select_color_palettes(features):
+    valence = features['valence']
+    energy = features['energy']
+    colors = ""
+    if valence >= .5 and energy >= .5:
+        colors = ["pink", "blue", "yellow", "red", "green"]
+    elif valence >= .5 and energy < .5:
+        colors = ["orange", "pink", "yellow", "white", "green"]
+    elif valence < .5 and energy >= .5:
+        colors = ["blue", "white", "red orange", "blue", "green"]
+    else:
+        colors = ["blue", "purple", "dark red", "black", "indigo"]
+    return colors
+
+
+def compile_coordiinates(brushes, coordinates, colors):
+    section = len(coordinates) / 6
+
+    all_commands = []
+
+    # get color command -- ex: C,1,red.
+    for i in range(1, len(brushes)+1):
+        all_commands.append("C," + str(i) + "," + colors[i-1] + ".")
+
+    # switch to using a brush: S,4.
+    # divides the coordinates into 6 sections and switches brush 5 times
+    coor_count = 0
+    for i in range(len(coordinates) + len(brushes)):
+        if i % section == 0:
+            all_commands.append("S," + brushes[i] + ".")
+        else:
+            all_commands.append(coordinates[coor_count])
+            coor_count += 1
+
+    return all_commands
+
+
+def send_commands(cmds):
     arduino.write(bytes("M,100,200.", 'utf-8'))
 
 
@@ -93,15 +183,26 @@ def main():
 
     # artist, track = record_and_recognize_song()
     #artist, track = "Queen" , "Another One Bites The Dust"
-    artist = "Jon Bellion"  # chosen artist
-    track = "Stupid Deep"
+    artist = "Borns"  # chosen artist
+    track = "Electric Love"
     spotify_info = get_spotify_info(artist, track)
+    features = spotify_info[0]
     analysis = spotify_info[1]
-    coordinates = loudness_pitch_coordinates(
-        analysis['loudness'], analysis['pitches'])
-    print(len(coordinates))
-    print(coordinates[:100])
+    duration = spotify_info[2] / 1000
+    brushes = select_brushes(duration)
+    coordinates = generate_coordinates(
+        analysis['loudness'], analysis['pitches'], analysis['timbre'])
+    loud_vs_pitch = coordinates[0]
+    loud_vs_timbre = coordinates[1]
+    timbre_vs_pitch = coordinates[2]
+    all_coordinates = []
+    all_coordinates.append(loud_vs_pitch).append(
+        loud_vs_timbre).append(timbre_vs_pitch)
+    palette = select_color_palettes(features)
+    all_commands = compile_coordiinates(brushes, all_coordinates, palette)
+    send_commands(all_commands)
 
-
+    # print(len(coordinates))
+    # print(coordinates[:100])
 if __name__ == "__main__":
     main()

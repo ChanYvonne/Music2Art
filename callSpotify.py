@@ -9,7 +9,7 @@ client_secret = '1e395ecaf45f488fa539560d57963bf6'
 
 client_credentials_manager = SpotifyClientCredentials(
     client_id=client_id, client_secret=client_secret)
-sp = spotipy.Spotify(auth='BQD7rTe0QTsp_atIuuDnaXnBf1Y3vcKzqhpCWh3-0lsAdB4VO9Qa9rvguCYwzKyBccaqQ1hEz-nlMP4QktgkU6M5wgc0OuvJA0sjTOJppmRr4c2JRyX3M4OEbD49Vn4-3VX1ys19Xishkg',
+sp = spotipy.Spotify(auth='BQCqqYpYTeI5JWEPW_fNbp_t_qDw3Qj467HmmhQxbAixyyXjsLu-iDapxZaB27xElvzrE6Il2ADcb3jbKVY5RQaLqAEd2LkIB_O8A21iXIMrRoCXON0pc5BhqmeU9TX-YthXeTVKqscCow',
                      client_credentials_manager=client_credentials_manager)
 
 
@@ -62,11 +62,15 @@ def get_audio_analysis(track_uri):
     track_analysis['loudness'] = []
     track_analysis['pitches'] = []
     track_analysis['timbre'] = []
+    track_analysis['segment_end'] = []
 
     for i in segments:
         track_analysis['loudness'].append(i['loudness_max'])
         track_analysis['pitches'].append(sum(i['pitches'])/len(i['pitches']))
         track_analysis['timbre'].append(sum(i['timbre'])/len(i['timbre']))
+        current_time = float(
+            track_analysis['start']) + float(track_analysis['duration'])
+        track_analysis['segment_end'].append(current_time)
 
     return track_analysis
 
