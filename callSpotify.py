@@ -9,7 +9,7 @@ client_secret = '1e395ecaf45f488fa539560d57963bf6'
 
 client_credentials_manager = SpotifyClientCredentials(
     client_id=client_id, client_secret=client_secret)
-sp = spotipy.Spotify(auth='BQDI8ItIKiqQ2Ju_yKeR5GjVAyFT5lR9GMNzidaolLuezT08ETFjLBJcqcxk7AJJczAa6cov1UogBuZfGgR1EQPvdM6N4p1T7d5UwVwV2U1hUE4ZDSmQo86ZVMk6W1eWRV-hCeLcl8w-iQ',
+sp = spotipy.Spotify(auth='BQBq5ErfFMa0lKq44vtFL9ISRxBAar8DvC0iLSwawtpc2xHq_XQIcM973istGqeEP__wTkBrJINYnhlIZQY7wPsu8LZaGkESlXlg2yJn0LGWR790fW3EUTQhXevRqvlcfZeOnnNVDLWwJg',
                      client_credentials_manager=client_credentials_manager)
 
 
