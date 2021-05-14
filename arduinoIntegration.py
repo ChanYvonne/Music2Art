@@ -115,7 +115,7 @@ def generate_coordinates(loudness, pitches, timbre):
     # print(len(x_timbre))
 
     # filter so it's not as many points -- assumes all lists are the same length
-    for i in range(len(x_pitch)/80):
+    for i in range(len(x_pitch)/60):
         index = random.randrange(0, len(x_pitch))
         while(index in visited):
             index = random.randrange(0, len(x_pitch))
@@ -124,7 +124,7 @@ def generate_coordinates(loudness, pitches, timbre):
         y_timbre_f.append(y_timbre[index])
 
     visited = []
-    for i in range(len(x_timbre)/80):
+    for i in range(len(x_timbre)/60):
         index = random.randrange(0, len(x_pitch))
         while(index in visited):
             index = random.randrange(0, len(x_pitch))
@@ -141,14 +141,17 @@ def generate_coordinates(loudness, pitches, timbre):
     # plt.scatter(x_pitch, y_loud, c='red')
     # plt.scatter(x_pitch, y_timbre, c='green')
     # plt.scatter(x_timbre, y_loud, c='blue')
-    plt.plot(x_pitch_f, y_loud_f, c='red')
-    plt.plot(x_pitch_f, y_timbre_f, c='green')
-    plt.plot(x_timbre_f, y_loud_f, c='blue')
-    plt.show()
 
     loud_v_pitch = select_strokes(x_pitch_f, y_loud_f)
     loud_v_timbre = select_strokes(x_timbre_f, y_loud_f)
     timbre_v_pitch = select_strokes(x_pitch_f, y_timbre_f)
+
+    # print(loud_v_pitch)
+
+    # plt.plot(loud_v_pitch[0], loud_v_pitch[1], c='red')
+    # plt.plot(loud_v_timbre[0], loud_v_timbre[1], c='green')
+    # plt.plot(timbre_v_pitch[0], timbre_v_pitch[1], c='blue')
+    # plt.show()
 
     loud_pitch = move_command(
         loud_v_pitch[0], loud_v_pitch[1])  # in y vs. x format
@@ -165,7 +168,8 @@ def select_strokes(x_cor, y_cor):
     new_y_coor = []
     # different brushstrokes -- either zigzag, box, or line
     for i in range(len(x_cor)-1):
-        stroke = random.randrange(1, 4)
+        stroke = random.randrange(1, 5)
+        # coor = manual_box(x_cor[i], y_cor[i])
         if (stroke == 1):
             coor = box_pattern(x_cor[i], y_cor[i], x_cor[i+1], y_cor[i+1])
         elif (stroke == 2):
@@ -175,12 +179,14 @@ def select_strokes(x_cor, y_cor):
             else:
                 coor = zigzag(x_cor[i], y_cor[i], x_cor[i+1],
                               y_cor[i+1], y_cor[i-10:i+10])
+        elif (stroke == 3):
+            coor = manual_box(x_cor[i], y_cor[i])
         else:
-            coor = [x_cor[i], y_cor[i]]
-        new_x_coor.append(coor[0])
-        new_y_coor.append(coor[1])
+            coor = [[x_cor[i]], [y_cor[i]]]
+        new_x_coor.extend(coor[0])
+        new_y_coor.extend(coor[1])
 
-    return [x_cor, y_cor]
+    return [new_x_coor, new_y_coor]
 
 
 def move_command(x_cor, y_cor):
@@ -224,10 +230,10 @@ def box_pattern(x1, y1, x2, y2):
     x_cor = [x1]
     y_cor = [y1]
     for i in range(1, num_squares+1):
-        x_cor.append([x1 + 2*(i-1), x1 + 2*(i) + 5,
-                     x1 + 2*(i) + 5, x1 + 2*(i)])
-        y_cor.append([y1 - 9*(i) + 5*(i-1), y1 - 9*(i) + 5*(i-1),
-                     y1 - 9*(i) + 5*(i), y1 - 9*(i) + 5*(i)])
+        x_cor.extend([x1 + 4*(i-1), x1 + 4*(i) + 8,
+                     x1 + 4*(i) + 8, x1 + 4*(i)])
+        y_cor.extend([y1 - 12*(i) + 8*(i-1), y1 - 12*(i) + 8*(i-1),
+                     y1 - 12*(i) + 8*(i), y1 - 12*(i) + 8*(i)])
 
     x_cor.append(x2)
     y_cor.append(y2)
@@ -254,6 +260,14 @@ def zigzag(x1, y1, x2, y2, scale):
     x_cor.append(x2)
     y_cor.append(y2)
 
+    return [x_cor, y_cor]
+
+
+def manual_box(x1, y1):
+    width = 600
+    length = 800
+    x_cor = [x1, x1 + width, x1 + width, x1, x1]
+    y_cor = [y1, y1, y1 - length, y1 - length, y1]
     return [x_cor, y_cor]
 
 
