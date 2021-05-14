@@ -77,15 +77,18 @@ def generate_coordinates(loudness, pitches, timbre):
     max_timbre = max(timbre)
     min_timbre = min(timbre)
 
-    loud_scale = interp1d([min_loud, max_loud], [0, 3162]
+    length = 4540
+    width = 3162
+
+    loud_scale = interp1d([min_loud, max_loud], [0, width]
                           )  # [min, max] of x-axis
     pitch_scale = interp1d([min_pitch, max_pitch], [
-                           0, 4540])  # [min, max] of y-axis
+                           0, length])  # [min, max] of y-axis
     timbre_scale_x = interp1d([min_timbre, max_timbre], [
-        0, 4540])  # another x- axis option
+        0, length])  # another x- axis option
 
     timbre_scale_y = interp1d([min_timbre, max_timbre], [
-        0, 3162])  # another y- axis option
+        0, width])  # another y- axis option
 
     x_pitch = []
     x_timbre = []
@@ -101,31 +104,70 @@ def generate_coordinates(loudness, pitches, timbre):
     for y in timbre_scale_y(timbre):
         y_timbre.append(truncate(y, 3))
 
+    x_pitch_f = []
+    x_timbre_f = []
+    y_timbre_f = []
+    y_loud_f = []
+
+    # filter so it's not as many points -- assumes all lists are the same length
+    for i in range(len(x_pitch)/2):
+        index = random.randrange(0, len(x_pitch))
+        x_pitch_f.append(x_pitch[index])
+        y_loud_f.append(y_loud[index])
+        y_timbre_f.append(y_timbre[index])
+
+    for i in range(len(x_timbre)/2):
+        index = random.randrange(0, len(x_timbre))
+        x_timbre_f.append(x_timbre[index])
+        y_loud_f.append(y_loud[index])
+
     # stimulate what it looks like
     # plt.scatter(x_pitch, y_loud, c='red')
     # plt.scatter(x_pitch, y_timbre, c='green')
     # plt.scatter(x_timbre, y_loud, c='blue')
+    # plt.axline((x1, y1), (x2, y2))
     # plt.show()
 
-    loud_pitch = []  # in y vs. x format
-    for y in y_loud:
-        for x in x_pitch:
-            loud_pitch.append(
-                "M," + str(x) + "," + str(y) + ".")
+    loud_v_pitch = select_strokes(x_pitch_f, y_loud_f)
+    loud_v_timbre = select_strokes(x_timbre_f, y_loud_f)
+    timbre_v_pitch = select_strokes(x_pitch_f, y_timbre_f)
 
-    loud_timbre = []
-    for y in y_loud:
-        for x in x_timbre:
-            loud_timbre.append(
-                "M," + str(x) + "," + str(y) + ".")
+    loud_pitch = move_command(
+        loud_v_pitch[0], loud_v_pitch[1])  # in y vs. x format
 
-    timbre_pitch = []
-    for y in y_timbre:
-        for x in x_pitch:
-            timbre_pitch.append(
-                "M," + str(x) + "," + str(y) + ".")
+    loud_timbre = move_command(loud_v_timbre[0], loud_v_timbre[1])
+
+    timbre_pitch = move_command(timbre_v_pitch[0], timbre_v_pitch[1])
 
     return [loud_pitch, loud_timbre, timbre_pitch]
+
+
+def select_strokes(x_cor, y_cor):
+    new_x_coor = []
+    new_y_coor = []
+    # different brushstrokes -- either zigzag, box, or line
+    for i in range(len(x_cor)-1):
+        stroke = random.randrange(1, 4)
+        if (stroke == 1):
+            coor = box_pattern(x_cor[i], y_cor[i], x_cor[i+1], y_cor[i+1])
+        elif (stroke == 2):
+            coor = zigzag(x_cor[i], y_cor[i], x_cor[i+1],
+                          y_cor[i+1], y_cor[i-20:i+20])
+        else:
+            coor = [x_cor[i], y_cor[i]]
+        new_x_coor.append(coor[0])
+        new_y_coor.append(coor[1])
+
+    return [x_cor, y_cor]
+
+
+def move_command(x_cor, y_cor):
+    coordinates = []
+    for y in y_cor:
+        for x in x_cor:
+            coordinates.append(
+                "M," + str(x) + "," + str(y) + ".")
+    return coordinates
 
 
 def select_brushes(duration):
@@ -155,14 +197,51 @@ def select_color_palettes(features):
     return colors
 
 
+def box_pattern(x1, y1, x2, y2):
+    num_squares = (x2 - x1) / 2
+    x_cor = [x1]
+    y_cor = [y1]
+    for i in range(1, num_squares+1):
+        x_cor.append([x1 + 2*(i-1), x1 + 2*(i) + 5,
+                     x1 + 2*(i) + 5, x1 + 2*(i)])
+        y_cor.append([y1 - 9*(i) + 5*(i-1), y1 - 9*(i) + 5*(i-1),
+                     y1 - 9*(i) + 5*(i), y1 - 9*(i) + 5*(i)])
+
+    x_cor.append(x2)
+    y_cor.append(y2)
+
+    return [x_cor, y_cor]
+
+
+def zigzag(x1, y1, x2, y2, scale):
+    normal = interp1d([min(scale), max(scale)], [0, 1])
+    range = x2 - x1
+    domain = y2 - y1
+    x_step = domain / 5
+    y_step = range / 5
+    x_cor = [x1]
+    y_cor = [y1]
+    for i in range(1, 6):
+        x_cor.append(x1 + x_step*i)
+        if (i % 2 == 0):
+            y_cor.append(y1 + normal(y_step*i))
+        else:
+            y_cor.append(y1 - normal(y_step*i))
+
+    x_cor.append(x2)
+    y_cor.append(y2)
+
+    return [x_cor, y_cor]
+
+
 def compile_coordiinates(brushes, coordinates, colors):
     section = len(coordinates) / 6
 
     all_commands = []
 
-    # get color command -- ex: C,1,red.
+    # get color command -- ex: C,1,0 where 1 is the paintbrush number and 0 is the paint hole number
     for i in range(1, len(brushes)+1):
-        all_commands.append("C," + str(i) + "," + colors[i-1] + ".")
+        all_commands.append("C," + str(i) + "," + str(i-1) + ".")
 
     # switch to using a brush: S,4.
     # divides the coordinates into 6 sections and switches brush 5 times
@@ -173,6 +252,9 @@ def compile_coordiinates(brushes, coordinates, colors):
         else:
             all_commands.append(coordinates[coor_count])
             coor_count += 1
+
+    # to stop all painting
+    all_commands.append("X.")
 
     return all_commands
 
