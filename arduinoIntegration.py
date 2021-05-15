@@ -116,7 +116,7 @@ def generate_coordinates(loudness, pitches, timbre):
 
     # filter so it's not as many points -- assumes all lists are the same length
     # print(x_pitch)
-    for i in range(math.floor(len(x_pitch)/80)):
+    for i in range(math.floor(len(x_pitch)/60)):
         index = random.randrange(0, len(x_pitch))
         while(index in visited):
             index = random.randrange(0, len(x_pitch))
@@ -125,7 +125,7 @@ def generate_coordinates(loudness, pitches, timbre):
         y_timbre_f.append(y_timbre[index])
 
     visited = []
-    for i in range(math.floor(len(x_timbre)/80)):
+    for i in range(math.floor(len(x_timbre)/60)):
         index = random.randrange(0, len(x_pitch))
         while(index in visited):
             index = random.randrange(0, len(x_pitch))
@@ -134,7 +134,7 @@ def generate_coordinates(loudness, pitches, timbre):
         y_loud_f.append(y_loud[index])
 
     points = len(x_pitch_f) + len(x_timbre_f) + len(y_loud_f) + len(y_timbre_f)
-    print("Total points extracted: " + str(points))
+    # print("Total points extracted: " + str(points))
 
     # stimulate what it looks like
     # plt.scatter(x_pitch, y_loud, c='red')
@@ -161,6 +161,8 @@ def generate_coordinates(loudness, pitches, timbre):
 
     return [loud_pitch, loud_timbre, timbre_pitch]
 
+# correlate specific brushstroke to segment features!
+
 
 def select_strokes(x_cor, y_cor):
     new_x_coor = []
@@ -170,18 +172,22 @@ def select_strokes(x_cor, y_cor):
         stroke = random.randrange(1, 6)
         # coor = manual_box(x_cor[i], y_cor[i])
         if (stroke == 1):
-            coor = box_pattern(x_cor[i], y_cor[i], x_cor[i+1], y_cor[i+1])
+            if (i < 10):
+                coor = triangle(x_cor[i], y_cor[i], y_cor[i:i+10])
+            else:
+                coor = triangle(x_cor[i], y_cor[i], y_cor[i-5:i+5])
         elif (stroke == 2):
             if (i < 10):
                 coor = zigzag(x_cor[i], y_cor[i], x_cor[i+1],
-                              y_cor[i+1], y_cor[i:i+20])
+                              y_cor[i+1], y_cor[i:i+10])
             else:
                 coor = zigzag(x_cor[i], y_cor[i], x_cor[i+1],
-                              y_cor[i+1], y_cor[i-10:i+10])
-        elif (stroke == 3):
-            coor = manual_box(x_cor[i], y_cor[i], y_cor[i-10:i+10])
-        elif (stroke == 4):
-            coor = triangle(x_cor[i], y_cor[i], y_cor[i:i+20])
+                              y_cor[i+1], y_cor[i-5:i+5])
+        elif (stroke == 3 or 4):
+            if (i < 10):
+                coor = manual_box(x_cor[i], y_cor[i], x_cor[i:i+10])
+            else:
+                coor = manual_box(x_cor[i], y_cor[i], x_cor[i-5:i+5])
         else:
             coor = [[x_cor[i]], [y_cor[i]]]
         new_x_coor.extend(coor[0])
@@ -190,20 +196,20 @@ def select_strokes(x_cor, y_cor):
     return [new_x_coor, new_y_coor]
 
 
-def box_pattern(x1, y1, x2, y2):
-    num_squares = int((x2 - x1) / 2)
-    x_cor = [x1]
-    y_cor = [y1]
-    for i in range(1, num_squares+1):
-        x_cor.extend([x1 + 4*(i-1), x1 + 4*(i) + 8,
-                     x1 + 4*(i) + 8, x1 + 4*(i)])
-        y_cor.extend([y1 - 12*(i) + 8*(i-1), y1 - 12*(i) + 8*(i-1),
-                     y1 - 12*(i) + 8*(i), y1 - 12*(i) + 8*(i)])
+# def box_pattern(x1, y1, x2, y2):
+#     num_squares = int((x2 - x1) / 2)
+#     x_cor = [x1]
+#     y_cor = [y1]
+#     for i in range(1, num_squares+1):
+#         x_cor.extend([x1 + 4*(i-1), x1 + 4*(i) + 8,
+#                      x1 + 4*(i) + 8, x1 + 4*(i)])
+#         y_cor.extend([y1 - 12*(i) + 8*(i-1), y1 - 12*(i) + 8*(i-1),
+#                      y1 - 12*(i) + 8*(i), y1 - 12*(i) + 8*(i)])
 
-    x_cor.append(x2)
-    y_cor.append(y2)
+#     x_cor.append(x2)
+#     y_cor.append(y2)
 
-    return [x_cor, y_cor]
+#     return [x_cor, y_cor]
 
 
 def zigzag(x1, y1, x2, y2, scale):
@@ -229,8 +235,10 @@ def zigzag(x1, y1, x2, y2, scale):
 
 def triangle(x1, y1, scale):
     normal = interp1d([min(scale), max(scale)], [.3, 1.5])
-    width = normal(scale[math.floor(len(scale)/2)]) * 10
-    height = normal(scale[math.floor(len(scale)/2)]) * 10
+    width = normal(scale[math.floor(len(scale)/2)]) * 5
+    height = normal(scale[math.floor(len(scale)/2)]) * 5
+    # print(width)
+    # print(height)
     x_cor = [x1, x1 + width, x1 + .5*width, x1]
     y_cor = [y1, y1, y1 + height, y1]
     return [x_cor, y_cor]
@@ -238,8 +246,8 @@ def triangle(x1, y1, scale):
 
 def manual_box(x1, y1, scale):
     normal = interp1d([min(scale), max(scale)], [.3, 1.5])
-    width = normal(scale[math.floor(len(scale)/2)]) * 10
-    length = normal(scale[math.floor(len(scale)/2)]) * 10
+    width = 600
+    length = 800
     x_cor = [x1, x1 + width, x1 + width, x1, x1]
     y_cor = [y1, y1, y1 - length, y1 - length, y1]
     return [x_cor, y_cor]
@@ -287,18 +295,20 @@ def compile_coordinates(brushes, coordinates, colors):
 
     all_commands = []
 
-    # get color command -- ex: C,1,0 where 1 is the paintbrush number and 0 is the paint hole number
-    for i in range(1, len(brushes)+1):
-        all_commands.append("C," + str(i) + "," + str(i-1) + ".")
-
     # switch to using a brush: S,4.
     # divides the coordinates into 6 sections and switches brush 5 times
     coor_count = 0
+    brush_count = 0
     for i in range(len(coordinates) + len(brushes)):
         if i % section == 0:
             # print(i/section)
             all_commands.append(
                 "S," + str(brushes[math.floor(i / section)][0]) + ".")
+            # first one is the paintbrush nummber and second is the paint hole numberr
+            if (brush_count < 5):
+                brush_count += 1
+            all_commands.append("C," + str(brush_count) +
+                                "," + str(brush_count-1) + ".")
         else:
             # print("count: " + str(coor_count))
             # print("len-coor: " + str(len(coordinates)))
@@ -333,29 +343,36 @@ def main():
 
     # artist, track = record_and_recognize_song()
     # artist, track = "Queen" , "Another One Bites The Dust"
-    artist = "Borns"  # chosen artist
-    track = "Electric Love"
-    spotify_info = get_spotify_info(artist, track)
-    features = spotify_info[0]
-    analysis = spotify_info[1]
-    duration = spotify_info[2] / 1000
-    brushes = select_brushes(duration)
-    coordinates = generate_coordinates(
-        analysis['loudness'], analysis['pitches'], analysis['timbre'])
-    loud_vs_pitch = coordinates[0]
-    loud_vs_timbre = coordinates[1]
-    timbre_vs_pitch = coordinates[2]
-    all_coordinates = []
-    all_coordinates.extend(loud_vs_pitch)
-    all_coordinates.extend(loud_vs_timbre)
-    all_coordinates.extend(timbre_vs_pitch)
-    print("total coors: " + str(len(all_coordinates)))
-    palette = select_color_palettes(features)
-    all_commands = compile_coordinates(brushes, all_coordinates, palette)
+    # artist = "Borns"  # chosen artist
+    # track = "Electric Love"
+    # spotify_info = get_spotify_info(artist, track)
+    # features = spotify_info[0]
+    # analysis = spotify_info[1]
+    # duration = spotify_info[2] / 1000
+    # brushes = select_brushes(duration)
+    # coordinates = generate_coordinates(
+    #     analysis['loudness'], analysis['pitches'], analysis['timbre'])
+    # loud_vs_pitch = coordinates[0]
+    # loud_vs_timbre = coordinates[1]
+    # timbre_vs_pitch = coordinates[2]
+    # all_coordinates = []
+    # all_coordinates.extend(loud_vs_pitch)
+    # all_coordinates.extend(loud_vs_timbre)
+    # all_coordinates.extend(timbre_vs_pitch)
+    # # print("total coors: " + str(len(all_coordinates)))
+    # palette = select_color_palettes(features)
+    # all_commands = compile_coordinates(brushes, all_coordinates, palette)
+    # print(all_commands)
+
+    # read commands from testCommand.txt
+    text_file = open("testCommand.txt", "r")
+    commands = text_file.read().split('\', \'')
+    commands[len(lines)-1] = 'X.'
+    commands[0] = 'S,1.'
 
     # print("sending")
     # while True:
-    #     value = send_commands(all_commands)
+    #     value = send_commands(commands)
     #     print(value)
 
     # print(len(coordinates))
