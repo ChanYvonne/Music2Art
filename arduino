@@ -1,0 +1,123 @@
+
+#include <ESP32_Servo.h>
+#define paint1pin 26
+#define paint2pin 25
+#define paint3pin 13
+#define paint4pin 12
+#define paint5pin 4
+
+Servo test1;  // create servo object to control a servo
+Servo test2;  
+Servo test3;  
+Servo test4;  
+Servo test5;  
+boolean turn = true;
+int pos = 0;
+
+    Servo paint1;
+Servo paint2;
+Servo paint3;
+Servo paint4;
+Servo paint5;
+
+void setup() {
+  // put your setup code here, to run once:
+  paint1.attach(paint1pin);
+  paint2.attach(paint2pin);
+  paint3.attach(paint3pin);
+  paint4.attach(paint4pin);
+  paint5.attach(paint5pin);
+
+  Serial.begin(9600);
+}
+int maxPos = 150; 
+
+void moveServoDown(int activeBrush) {
+  if (activeBrush == 1) {
+   
+      paint1.write(0);
+      // tell servo to go to position in variable 'pos'
+      delay(15);                       // waits 15ms for the servo to reach the position
+    
+  }
+  else if (activeBrush == 2) {
+    for (pos = 0; pos <= maxPos; pos += 1) // goes from 0 degrees to 180 degrees
+    { // in steps of 1 degree
+      paint2.write(pos);
+      // tell servo to go to position in variable 'pos'
+      delay(15);                       // waits 15ms for the servo to reach the position
+    }
+  }
+  else if (activeBrush == 3) {
+    for (pos = 180; pos >= 180 - maxPos; pos -= 1) // goes from 0 degrees to 180 degrees
+    { // in steps of 1 degree
+      paint3.write(pos);
+      // tell servo to go to position in variable 'pos'
+      delay(15);                       // waits 15ms for the servo to reach the position
+    }
+  }
+  else if (activeBrush == 4) {
+    for (pos = 180; pos >= 180 - maxPos; pos -= 1) // goes from 0 degrees to 180 degrees
+    { // in steps of 1 degree
+      paint4.write(pos);
+      // tell servo to go to position in variable 'pos'
+      delay(15);                       // waits 15ms for the servo to reach the position
+    }
+  }
+  else if (activeBrush == 5) {
+      paint5.write(60);
+      // tell servo to go to position in variable 'pos'
+      delay(15);                       // waits 15ms for the servo to reach the position
+   
+  }
+}
+
+void moveServoUp(int activeBrush) {
+  if (activeBrush == 1) {
+    for (pos = maxPos; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
+      paint1.write(pos);              // tell servo to go to position in variable 'pos'
+      delay(15);                       // waits 15ms for the servo to reach the position
+    }
+  }
+  if (activeBrush == 2) {
+    for (pos = maxPos; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
+      paint2.write(pos);              // tell servo to go to position in variable 'pos'
+      delay(15);                       // waits 15ms for the servo to reach the position
+    }
+  }
+  else if (activeBrush == 3) {
+    for (pos = 180  - maxPos; pos <= 180  ; pos += 1) { // goes from 180 degrees to 0 degrees
+      paint3.write(pos);              // tell servo to go to position in variable 'pos'
+      delay(15);                       // waits 15ms for the servo to reach the position
+    }
+  }
+    else if (activeBrush == 4) {
+    for (pos = 180  - maxPos; pos <= 180  ; pos += 1) { // goes from 180 degrees to 0 degrees
+      paint4.write(pos);              // tell servo to go to position in variable 'pos'
+      delay(15);                       // waits 15ms for the servo to reach the position
+    }
+  }
+   else if (activeBrush == 5) {
+    // goes from 180 degrees to 0 degrees
+      paint5.write(180);              // tell servo to go to position in variable 'pos'
+  }
+
+}
+
+void loop() {
+
+    moveServoUp(3);
+    delay(1000);
+    moveServoDown(3);
+        delay(1000);
+    moveServoUp(4);
+    delay(1000);
+    moveServoDown(4);
+        delay(1000);
+    moveServoUp(5);
+    delay(1000);
+    moveServoDown(5);
+        delay(1000);
+  
+
+}
