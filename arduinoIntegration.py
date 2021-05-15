@@ -15,8 +15,8 @@ import time
 
 from scipy.interpolate import interp1d
 
-arduino = Serial(port='/dev/cu.usbserial-021FEBDC',
-                 baudrate=115200, timeout=.1)
+# arduino = Serial(port='/dev/cu.usbserial-021FEBDC',
+#                  baudrate=115200, timeout=.1)
 fps = 60
 time_delta = 1./fps
 
@@ -78,8 +78,8 @@ def generate_coordinates(loudness, pitches, timbre):
     max_timbre = max(timbre)
     min_timbre = min(timbre)
 
-    length = 4403
-    width = 3162
+    length = 2000
+    width = 1500
 
     loud_scale = interp1d([min_loud, max_loud], [0, width]
                           )  # [min, max] of x-axis
@@ -117,7 +117,7 @@ def generate_coordinates(loudness, pitches, timbre):
 
     # filter so it's not as many points -- assumes all lists are the same length
     # print(x_pitch)
-    for i in range(math.floor(len(x_pitch)/60)):
+    for i in range(math.floor(len(x_pitch)/160)):
         index = random.randrange(0, len(x_pitch))
         while(index in visited):
             index = random.randrange(0, len(x_pitch))
@@ -126,7 +126,7 @@ def generate_coordinates(loudness, pitches, timbre):
         y_timbre_f.append(y_timbre[index])
 
     visited = []
-    for i in range(math.floor(len(x_timbre)/60)):
+    for i in range(math.floor(len(x_timbre)/160)):
         index = random.randrange(0, len(x_pitch))
         while(index in visited):
             index = random.randrange(0, len(x_pitch))
@@ -135,12 +135,7 @@ def generate_coordinates(loudness, pitches, timbre):
         y_loud_f.append(y_loud[index])
 
     points = len(x_pitch_f) + len(x_timbre_f) + len(y_loud_f) + len(y_timbre_f)
-    # print("Total points extracted: " + str(points))
-
-    # stimulate what it looks like
-    # plt.scatter(x_pitch, y_loud, c='red')
-    # plt.scatter(x_pitch, y_timbre, c='green')
-    # plt.scatter(x_timbre, y_loud, c='blue')
+    print("Total points extracted: " + str(points))
 
     loud_v_pitch = select_strokes(x_pitch_f, y_loud_f)
     loud_v_timbre = select_strokes(x_timbre_f, y_loud_f)
@@ -148,10 +143,11 @@ def generate_coordinates(loudness, pitches, timbre):
 
     # print(loud_v_pitch)
 
-    # plt.plot(loud_v_pitch[0], loud_v_pitch[1], c='red')
-    # plt.plot(loud_v_timbre[0], loud_v_timbre[1], c='green')
-    # plt.plot(timbre_v_pitch[0], timbre_v_pitch[1], c='blue')
-    # plt.show()
+    # stimulate what it looks like
+    plt.plot(loud_v_pitch[0], loud_v_pitch[1], c='red')
+    plt.plot(loud_v_timbre[0], loud_v_timbre[1], c='green')
+    plt.plot(timbre_v_pitch[0], timbre_v_pitch[1], c='blue')
+    plt.show()
 
     loud_pitch = move_command(
         loud_v_pitch[0], loud_v_pitch[1])  # in y vs. x format
@@ -247,8 +243,8 @@ def triangle(x1, y1, scale):
 
 def manual_box(x1, y1, scale):
     normal = interp1d([min(scale), max(scale)], [.3, 1.5])
-    width = 600
-    length = 800
+    width = 300
+    length = 500
     x_cor = [x1, x1 + width, x1 + width, x1, x1]
     y_cor = [y1, y1, y1 - length, y1 - length, y1]
     return [x_cor, y_cor]
@@ -346,32 +342,39 @@ def main():
 
     # artist, track = record_and_recognize_song()
     # artist, track = "Queen" , "Another One Bites The Dust"
-    # artist = "Borns"  # chosen artist
-    # track = "Electric Love"
-    # spotify_info = get_spotify_info(artist, track)
-    # features = spotify_info[0]
-    # analysis = spotify_info[1]
-    # duration = spotify_info[2] / 1000
-    # brushes = select_brushes(duration)
-    # coordinates = generate_coordinates(
-    #     analysis['loudness'], analysis['pitches'], analysis['timbre'])
-    # loud_vs_pitch = coordinates[0]
-    # loud_vs_timbre = coordinates[1]
-    # timbre_vs_pitch = coordinates[2]
-    # all_coordinates = []
-    # all_coordinates.extend(loud_vs_pitch)
-    # all_coordinates.extend(loud_vs_timbre)
-    # all_coordinates.extend(timbre_vs_pitch)
-    # # print("total coors: " + str(len(all_coordinates)))
-    # palette = select_color_palettes(features)
-    # all_commands = compile_coordinates(brushes, all_coordinates, palette)
-    # print(all_commands)
+    artist = "Borns"  # chosen artist
+    track = "Electric Love"
+    spotify_info = get_spotify_info(artist, track)
+    features = spotify_info[0]
+    analysis = spotify_info[1]
+    duration = spotify_info[2] / 1000
+    brushes = select_brushes(duration)
+    coordinates = generate_coordinates(
+        analysis['loudness'], analysis['pitches'], analysis['timbre'])
+    loud_vs_pitch = coordinates[0]
+    loud_vs_timbre = coordinates[1]
+    timbre_vs_pitch = coordinates[2]
+    all_coordinates = []
+    all_coordinates.extend(loud_vs_pitch)
+    all_coordinates.extend(loud_vs_timbre)
+    all_coordinates.extend(timbre_vs_pitch)
 
-    # read commands from testCommand.txt
+    palette = select_color_palettes(features)
+    all_commands = compile_coordinates(brushes, all_coordinates, palette)
+    # print(all_commands)
+    # print("total coors: " + str(len(all_coordinates)))
+
+    # Test 1 - ~12000 read commands from testCommand.txt
+    # text_file = open("testCommand.txt", "r")
+    # commands = text_file.read().split('\', \'')
+    # commands[len(commands)-1] = 'X.'
+    # commands[0] = 'S,1.'
+
+    # Test 2 - 1024 commands with 20 coordinates
     text_file = open("testCommand.txt", "r")
     commands = text_file.read().split('\', \'')
-    commands[len(lines)-1] = 'X.'
-    commands[0] = 'S,1.'
+    commands[len(commands)-1] = 'X.'
+    commands[0] = 'S,2.'
 
     # print("sending")
     # while True:
