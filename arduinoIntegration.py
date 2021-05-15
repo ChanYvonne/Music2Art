@@ -117,7 +117,7 @@ def generate_coordinates(loudness, pitches, timbre):
 
     # filter so it's not as many points -- assumes all lists are the same length
     # print(x_pitch)
-    for i in range(math.floor(len(x_pitch)/160)):
+    for i in range(math.floor(len(x_pitch)/300)):
         index = random.randrange(0, len(x_pitch))
         while(index in visited):
             index = random.randrange(0, len(x_pitch))
@@ -126,7 +126,7 @@ def generate_coordinates(loudness, pitches, timbre):
         y_timbre_f.append(y_timbre[index])
 
     visited = []
-    for i in range(math.floor(len(x_timbre)/160)):
+    for i in range(math.floor(len(x_timbre)/300)):
         index = random.randrange(0, len(x_pitch))
         while(index in visited):
             index = random.randrange(0, len(x_pitch))
