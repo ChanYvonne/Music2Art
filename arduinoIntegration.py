@@ -230,7 +230,7 @@ def zigzag(x1, y1, x2, y2, scale):
 def triangle(x1, y1, scale):
     normal = interp1d([min(scale), max(scale)], [.3, 1.5])
     width = normal(scale[math.floor(len(scale)/2)])
-    height = normal(scale[math.floor(len(scale)/2+1)])
+    height = normal(scale[math.floor(len(scale)/2)])
     x_cor = [x1, x1 + width, x1 + .5*width, x1]
     y_cor = [y1, y1, y1 + height, y1]
     return [x_cor, y_cor]
@@ -239,7 +239,7 @@ def triangle(x1, y1, scale):
 def manual_box(x1, y1, scale):
     normal = interp1d([min(scale), max(scale)], [.3, 1.5])
     width = normal(scale[math.floor(len(scale)/2)])
-    length = normal(scale[math.floor(len(scale)/2+1)])
+    length = normal(scale[math.floor(len(scale)/2)])
     x_cor = [x1, x1 + width, x1 + width, x1, x1]
     y_cor = [y1, y1, y1 - length, y1 - length, y1]
     return [x_cor, y_cor]
