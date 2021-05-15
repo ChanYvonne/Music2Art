@@ -370,7 +370,7 @@ def main():
     # commands[0] = 'S,1.'
 
     # Test 2 - least commands
-    text_file = open("testCommand2.txt", "r")
+    text_file = open("testCommand3.txt", "r")
     commands = text_file.read().split('\', \'')
 
     # Test 3 - 731 commands with 20 coordinates
