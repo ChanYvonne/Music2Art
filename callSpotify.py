@@ -9,7 +9,7 @@ client_secret = '1e395ecaf45f488fa539560d57963bf6'
 
 client_credentials_manager = SpotifyClientCredentials(
     client_id=client_id, client_secret=client_secret)
-sp = spotipy.Spotify(auth='BQBrk0PnFsQrEzJ3F7aErwlxY8es6tmZfaZAgIoJQr7pqX_miTzO_uGKZ_JW4Bdqdfm34S_LKG1AV2rasAVYWG7AbXU3zJFYjniURLCLIb42J6oHiFN6V9dxoi7xG0jD-Rx1Vf_of6tBpg',
+sp = spotipy.Spotify(auth='BQCTMXpiI1S1ptglAoB0suf5E3H8iVXFJ1wSnzF1Sz58W_ZVQUcHJQEjhYGAn71BuuKVYd6130PE3NG_aF5pPqYBCsD94-SQyBsvHU_KBRH2V8elXQspQgCIn7YFuO55cICW8LSIoJWX3A',
                      client_credentials_manager=client_credentials_manager)
 arduino = None
 

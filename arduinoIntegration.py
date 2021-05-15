@@ -15,7 +15,8 @@ import time
 
 from scipy.interpolate import interp1d
 
-arduino = Serial(port='/dev/cu.usbserial-021FEBDC',baudrate=115200, timeout=.1)
+# arduino = Serial(port='/dev/cu.usbserial-021FEBDC',
+#                  baudrate=115200, timeout=.1)
 fps = 60
 time_delta = 1./fps
 
@@ -116,7 +117,7 @@ def generate_coordinates(loudness, pitches, timbre):
 
     # filter so it's not as many points -- assumes all lists are the same length
     # print(x_pitch)
-    for i in range(math.floor(len(x_pitch)/300)):
+    for i in range(math.floor(len(x_pitch)/100)):
         index = random.randrange(0, len(x_pitch))
         while(index in visited):
             index = random.randrange(0, len(x_pitch))
@@ -125,7 +126,7 @@ def generate_coordinates(loudness, pitches, timbre):
         y_timbre_f.append(y_timbre[index])
 
     visited = []
-    for i in range(math.floor(len(x_timbre)/300)):
+    for i in range(math.floor(len(x_timbre)/100)):
         index = random.randrange(0, len(x_pitch))
         while(index in visited):
             index = random.randrange(0, len(x_pitch))
@@ -298,13 +299,14 @@ def compile_coordinates(brushes, coordinates, colors):
     for i in range(len(coordinates) + len(brushes)):
         if i % section == 0:
             # print(i/section)
-            all_commands.append(
-                "S," + str(brushes[math.floor(i / section)][0]) + ".")
-            # first one is the paintbrush nummber and second is the paint hole numberr
             if (brush_count < 5):
                 brush_count += 1
             all_commands.append("C," + str(brush_count) +
                                 "," + str(brush_count-1) + ".")
+            all_commands.append(
+                "S," + str(brushes[math.floor(i / section)][0]) + ".")
+            # first one is the paintbrush nummber and second is the paint hole numberr
+
         else:
             # print("count: " + str(coor_count))
             # print("len-coor: " + str(len(coordinates)))
@@ -341,27 +343,27 @@ def main():
 
     # artist, track = record_and_recognize_song()
     # artist, track = "Queen" , "Another One Bites The Dust"
-    artist = "Borns"  # chosen artist
-    track = "Electric Love"
-    # spotify_info = get_spotify_info(artist, track)
-    # features = spotify_info[0]
-    # analysis = spotify_info[1]
-    # duration = spotify_info[2] / 1000
-    # brushes = select_brushes(duration)
-    # coordinates = generate_coordinates(
-    #     analysis['loudness'], analysis['pitches'], analysis['timbre'])
-    # loud_vs_pitch = coordinates[0]
-    # loud_vs_timbre = coordinates[1]
-    # timbre_vs_pitch = coordinates[2]
-    # all_coordinates = []
-    # all_coordinates.extend(loud_vs_pitch)
-    # all_coordinates.extend(loud_vs_timbre)
-    # all_coordinates.extend(timbre_vs_pitch)
+    artist = "Hundred Waters"  # chosen artist
+    track = "Show Me Love"
+    spotify_info = get_spotify_info(artist, track)
+    features = spotify_info[0]
+    analysis = spotify_info[1]
+    duration = spotify_info[2] / 1000
+    brushes = select_brushes(duration)
+    coordinates = generate_coordinates(
+        analysis['loudness'], analysis['pitches'], analysis['timbre'])
+    loud_vs_pitch = coordinates[0]
+    loud_vs_timbre = coordinates[1]
+    timbre_vs_pitch = coordinates[2]
+    all_coordinates = []
+    all_coordinates.extend(loud_vs_pitch)
+    all_coordinates.extend(loud_vs_timbre)
+    all_coordinates.extend(timbre_vs_pitch)
 
-    # palette = select_color_palettes(features)
-    # all_commands = compile_coordinates(brushes, all_coordinates, palette)
-    # # print(all_commands)
-    # print("total coors: " + str(len(all_coordinates)))
+    palette = select_color_palettes(features)
+    all_commands = compile_coordinates(brushes, all_coordinates, palette)
+    print(all_commands)
+    print("total coors: " + str(len(all_coordinates)))
 
     # Test 1 - ~12000 read commands from testCommand.txt
     # text_file = open("testCommand.txt", "r")
@@ -370,8 +372,8 @@ def main():
     # commands[0] = 'S,1.'
 
     # Test 2 - least commands
-    text_file = open("testCommand2.txt", "r")
-    commands = text_file.read().split('\', \'')
+    # text_file = open("testCommand2.txt", "r")
+    # commands = text_file.read().split('\', \'')
 
     # Test 3 - 731 commands with 20 coordinates
     # text_file = open("testCommand3.txt", "r")
@@ -379,10 +381,10 @@ def main():
     # commands[len(commands)-1] = 'X.'
     # commands[0] = 'S,2.'
 
-    print("sending")
-    while True:
-        value = send_commands(commands)
-        print(value)
+    # print("sending")
+    # while True:
+    #     value = send_commands(commands)
+    #     print(value)
 
     # print(len(coordinates))
     # print(coordinates[:100])
