@@ -384,7 +384,7 @@ def main():
 
     print("sending")
     while True:
-        value = send_commands(commands_2)
+        value = send_commands(commands)
         print(value)
 
     # print(len(coordinates))
