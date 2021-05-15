@@ -15,8 +15,7 @@ import time
 
 from scipy.interpolate import interp1d
 
-# arduino = Serial(port='/dev/cu.usbserial-021FEBDC',
-#                  baudrate=115200, timeout=.1)
+arduino = Serial(port='/dev/cu.usbserial-021FEBDC',baudrate=115200, timeout=.1)
 fps = 60
 time_delta = 1./fps
 
@@ -344,25 +343,25 @@ def main():
     # artist, track = "Queen" , "Another One Bites The Dust"
     artist = "Borns"  # chosen artist
     track = "Electric Love"
-    spotify_info = get_spotify_info(artist, track)
-    features = spotify_info[0]
-    analysis = spotify_info[1]
-    duration = spotify_info[2] / 1000
-    brushes = select_brushes(duration)
-    coordinates = generate_coordinates(
-        analysis['loudness'], analysis['pitches'], analysis['timbre'])
-    loud_vs_pitch = coordinates[0]
-    loud_vs_timbre = coordinates[1]
-    timbre_vs_pitch = coordinates[2]
-    all_coordinates = []
-    all_coordinates.extend(loud_vs_pitch)
-    all_coordinates.extend(loud_vs_timbre)
-    all_coordinates.extend(timbre_vs_pitch)
+    # spotify_info = get_spotify_info(artist, track)
+    # features = spotify_info[0]
+    # analysis = spotify_info[1]
+    # duration = spotify_info[2] / 1000
+    # brushes = select_brushes(duration)
+    # coordinates = generate_coordinates(
+    #     analysis['loudness'], analysis['pitches'], analysis['timbre'])
+    # loud_vs_pitch = coordinates[0]
+    # loud_vs_timbre = coordinates[1]
+    # timbre_vs_pitch = coordinates[2]
+    # all_coordinates = []
+    # all_coordinates.extend(loud_vs_pitch)
+    # all_coordinates.extend(loud_vs_timbre)
+    # all_coordinates.extend(timbre_vs_pitch)
 
-    palette = select_color_palettes(features)
-    all_commands = compile_coordinates(brushes, all_coordinates, palette)
-    # print(all_commands)
-    print("total coors: " + str(len(all_coordinates)))
+    # palette = select_color_palettes(features)
+    # all_commands = compile_coordinates(brushes, all_coordinates, palette)
+    # # print(all_commands)
+    # print("total coors: " + str(len(all_coordinates)))
 
     # Test 1 - ~12000 read commands from testCommand.txt
     # text_file = open("testCommand.txt", "r")
@@ -370,11 +369,9 @@ def main():
     # commands[len(commands)-1] = 'X.'
     # commands[0] = 'S,1.'
 
-    #  Test 2 - least commands
-    # text_file = open("testCommand2.txt", "r")
-    # commands = text_file.read().split('\', \'')
-    # commands[len(commands)-1] = 'X.'
-    # commands[0] = 'S,2.'
+    # Test 2 - least commands
+    text_file = open("testCommand2.txt", "r")
+    commands = text_file.read().split('\', \'')
 
     # Test 3 - 731 commands with 20 coordinates
     # text_file = open("testCommand3.txt", "r")
