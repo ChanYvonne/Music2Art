@@ -147,10 +147,10 @@ def generate_coordinates(loudness, pitches, timbre):
 
     # print(loud_v_pitch)
 
-    plt.plot(loud_v_pitch[0], loud_v_pitch[1], c='red')
-    plt.plot(loud_v_timbre[0], loud_v_timbre[1], c='green')
-    plt.plot(timbre_v_pitch[0], timbre_v_pitch[1], c='blue')
-    plt.show()
+    # plt.plot(loud_v_pitch[0], loud_v_pitch[1], c='red')
+    # plt.plot(loud_v_timbre[0], loud_v_timbre[1], c='green')
+    # plt.plot(timbre_v_pitch[0], timbre_v_pitch[1], c='blue')
+    # plt.show()
 
     loud_pitch = move_command(
         loud_v_pitch[0], loud_v_pitch[1])  # in y vs. x format
