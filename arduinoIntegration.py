@@ -179,15 +179,70 @@ def select_strokes(x_cor, y_cor):
                 coor = zigzag(x_cor[i], y_cor[i], x_cor[i+1],
                               y_cor[i+1], y_cor[i-10:i+10])
         elif (stroke == 3):
-            coor = manual_box(x_cor[i], y_cor[i])
+            coor = manual_box(x_cor[i], y_cor[i], y_cor[i-10:i+10])
         elif (stroke == 4):
-            coor = triangle(x_cor[i], y_cor[i])
+            coor = triangle(x_cor[i], y_cor[i], y_cor[i:i+20])
         else:
             coor = [[x_cor[i]], [y_cor[i]]]
         new_x_coor.extend(coor[0])
         new_y_coor.extend(coor[1])
 
     return [new_x_coor, new_y_coor]
+
+
+def box_pattern(x1, y1, x2, y2):
+    num_squares = int((x2 - x1) / 2)
+    x_cor = [x1]
+    y_cor = [y1]
+    for i in range(1, num_squares+1):
+        x_cor.extend([x1 + 4*(i-1), x1 + 4*(i) + 8,
+                     x1 + 4*(i) + 8, x1 + 4*(i)])
+        y_cor.extend([y1 - 12*(i) + 8*(i-1), y1 - 12*(i) + 8*(i-1),
+                     y1 - 12*(i) + 8*(i), y1 - 12*(i) + 8*(i)])
+
+    x_cor.append(x2)
+    y_cor.append(y2)
+
+    return [x_cor, y_cor]
+
+
+def zigzag(x1, y1, x2, y2, scale):
+    normal = interp1d([min(scale), max(scale)], [.3, 1.5])
+    y_range = x2 - x1
+    domain = y2 - y1
+    x_step = domain / 4
+    y_step = y_range / 4
+    x_cor = [x1]
+    y_cor = [y1]
+    for i in range(1, 5):
+        x_cor.append(x1 + x_step*i)
+        if (i % 2 == 0):
+            y_cor.append(y1 + normal(scale[math.floor(len(scale)/2)])*y_step*i)
+        else:
+            y_cor.append(y1 - normal(scale[math.floor(len(scale)/2)])*y_step*i)
+
+    x_cor.append(x2)
+    y_cor.append(y2)
+
+    return [x_cor, y_cor]
+
+
+def triangle(x1, y1, scale):
+    normal = interp1d([min(scale), max(scale)], [.3, 1.5])
+    width = normal(scale[math.floor(len(scale)/2)])
+    height = normal(scale[math.floor(len(scale)/2+1)])
+    x_cor = [x1, x1 + width, x1 + .5*width, x1]
+    y_cor = [y1, y1, y1 + height, y1]
+    return [x_cor, y_cor]
+
+
+def manual_box(x1, y1, scale):
+    normal = interp1d([min(scale), max(scale)], [.3, 1.5])
+    width = normal(scale[math.floor(len(scale)/2)])
+    length = normal(scale[math.floor(len(scale)/2+1)])
+    x_cor = [x1, x1 + width, x1 + width, x1, x1]
+    y_cor = [y1, y1, y1 - length, y1 - length, y1]
+    return [x_cor, y_cor]
 
 
 def move_command(x_cor, y_cor):
@@ -224,60 +279,6 @@ def select_color_palettes(features):
     else:
         colors = ["blue", "purple", "dark red", "black", "indigo"]
     return colors
-
-
-def box_pattern(x1, y1, x2, y2):
-    num_squares = int((x2 - x1) / 2)
-    x_cor = [x1]
-    y_cor = [y1]
-    for i in range(1, num_squares+1):
-        x_cor.extend([x1 + 4*(i-1), x1 + 4*(i) + 8,
-                     x1 + 4*(i) + 8, x1 + 4*(i)])
-        y_cor.extend([y1 - 12*(i) + 8*(i-1), y1 - 12*(i) + 8*(i-1),
-                     y1 - 12*(i) + 8*(i), y1 - 12*(i) + 8*(i)])
-
-    x_cor.append(x2)
-    y_cor.append(y2)
-
-    return [x_cor, y_cor]
-
-
-def triangle(x1, y1):
-    width = 400
-    height = 500
-    x_cor = [x1, x1 + width, x1 + .5*width, x1]
-    y_cor = [y1, y1, y1 + height, y1]
-    return [x_cor, y_cor]
-
-
-def zigzag(x1, y1, x2, y2, scale):
-    normal = interp1d([min(scale), max(scale)], [0, 1])
-    y_range = x2 - x1
-    domain = y2 - y1
-    x_step = domain / 4
-    y_step = y_range / 4
-    x_cor = [x1]
-    y_cor = [y1]
-    for i in range(1, 5):
-        x_cor.append(x1 + x_step*i)
-        scale_index = random.randrange(0, len(scale))
-        if (i % 2 == 0):
-            y_cor.append(y1 + normal(scale[scale_index])*y_step*i)
-        else:
-            y_cor.append(y1 - normal(scale[scale_index])*y_step*i)
-
-    x_cor.append(x2)
-    y_cor.append(y2)
-
-    return [x_cor, y_cor]
-
-
-def manual_box(x1, y1):
-    width = 600
-    length = 800
-    x_cor = [x1, x1 + width, x1 + width, x1, x1]
-    y_cor = [y1, y1, y1 - length, y1 - length, y1]
-    return [x_cor, y_cor]
 
 
 def compile_coordinates(brushes, coordinates, colors):
