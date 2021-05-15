@@ -15,7 +15,8 @@ import time
 
 from scipy.interpolate import interp1d
 
-# arduino = Serial(port='/dev/cu.usbserial-021FEBDC', baudrate=115200, timeout=.1)
+arduino = Serial(port='/dev/cu.usbserial-021FEBDC',
+                 baudrate=115200, timeout=.1)
 fps = 60
 time_delta = 1./fps
 
@@ -324,15 +325,17 @@ def compile_coordinates(brushes, coordinates, colors):
 
 
 def send_commands(cmds):
+    print("send")
     for cmd in cmds:
-        print(cmd)
+        print("CMD", cmd)
         notDone = True
         arduino.write(bytes(cmd, 'utf-8'))
         time.sleep(time_delta)
         while(notDone):
-            data = arduino.readline()
-            if(str(data).includes("Done")):
-                notDone = True
+            data = arduino.readline().decode('utf-8')
+            print(data)
+            if("COMPLETED" in data):
+                notDone = False
                 time.sleep(time_delta)
 
     return data
