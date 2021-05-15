@@ -147,10 +147,10 @@ def generate_coordinates(loudness, pitches, timbre):
 
     # print(loud_v_pitch)
 
-    # plt.plot(loud_v_pitch[0], loud_v_pitch[1], c='red')
-    # plt.plot(loud_v_timbre[0], loud_v_timbre[1], c='green')
-    # plt.plot(timbre_v_pitch[0], timbre_v_pitch[1], c='blue')
-    # plt.show()
+    plt.plot(loud_v_pitch[0], loud_v_pitch[1], c='red')
+    plt.plot(loud_v_timbre[0], loud_v_timbre[1], c='green')
+    plt.plot(timbre_v_pitch[0], timbre_v_pitch[1], c='blue')
+    plt.show()
 
     loud_pitch = move_command(
         loud_v_pitch[0], loud_v_pitch[1])  # in y vs. x format
@@ -167,21 +167,23 @@ def select_strokes(x_cor, y_cor):
     new_y_coor = []
     # different brushstrokes -- either zigzag, box, or line
     for i in range(len(x_cor)-1):
-        stroke = random.randrange(1, 5)
-        coor = manual_box(x_cor[i], y_cor[i])
-        # if (stroke == 1):
-        #     coor = box_pattern(x_cor[i], y_cor[i], x_cor[i+1], y_cor[i+1])
-        # elif (stroke == 2):
-        #     if (i < 10):
-        #         coor = zigzag(x_cor[i], y_cor[i], x_cor[i+1],
-        #                       y_cor[i+1], y_cor[i:i+20])
-        #     else:
-        #         coor = zigzag(x_cor[i], y_cor[i], x_cor[i+1],
-        #                       y_cor[i+1], y_cor[i-10:i+10])
-        # elif (stroke == 3):
-        #     coor = manual_box(x_cor[i], y_cor[i])
-        # else:
-        #     coor = [[x_cor[i]], [y_cor[i]]]
+        stroke = random.randrange(1, 6)
+        # coor = manual_box(x_cor[i], y_cor[i])
+        if (stroke == 1):
+            coor = box_pattern(x_cor[i], y_cor[i], x_cor[i+1], y_cor[i+1])
+        elif (stroke == 2):
+            if (i < 10):
+                coor = zigzag(x_cor[i], y_cor[i], x_cor[i+1],
+                              y_cor[i+1], y_cor[i:i+20])
+            else:
+                coor = zigzag(x_cor[i], y_cor[i], x_cor[i+1],
+                              y_cor[i+1], y_cor[i-10:i+10])
+        elif (stroke == 3):
+            coor = manual_box(x_cor[i], y_cor[i])
+        elif (stroke == 4):
+            coor = triangle(x_cor[i], y_cor[i])
+        else:
+            coor = [[x_cor[i]], [y_cor[i]]]
         new_x_coor.extend(coor[0])
         new_y_coor.extend(coor[1])
 
@@ -237,6 +239,14 @@ def box_pattern(x1, y1, x2, y2):
     x_cor.append(x2)
     y_cor.append(y2)
 
+    return [x_cor, y_cor]
+
+
+def triangle(x1, y1):
+    width = 400
+    height = 500
+    x_cor = [x1, x1 + width, x1 + .5*width, x1]
+    y_cor = [y1, y1, y1 + height, y1]
     return [x_cor, y_cor]
 
 
