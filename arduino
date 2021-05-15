@@ -1,123 +1,385 @@
-
+#include <AccelStepper.h>
+#include <LiquidCrystal_I2C.h>
 #include <ESP32_Servo.h>
+// width 4403 3162
+# define stepX1Pin  33
+# define dirX1Pin  15
+
+# define stepYPin  32
+# define dirYPin  14
+
+#define home_switchX 21
+#define home_switchY 27
+
 #define paint1pin 26
 #define paint2pin 25
 #define paint3pin 13
 #define paint4pin 12
 #define paint5pin 4
 
-Servo test1;  // create servo object to control a servo
-Servo test2;  
-Servo test3;  
-Servo test4;  
-Servo test5;  
-boolean turn = true;
-int pos = 0;
+#define motorInterfaceType 1
 
-    Servo paint1;
+//  Steppers
+AccelStepper stepperX = AccelStepper(motorInterfaceType, stepX1Pin, dirX1Pin);
+AccelStepper stepperY = AccelStepper(motorInterfaceType, stepYPin, dirYPin);
+
+int move_finished = 1; // Used to check if move is completed
+long initial_homing = -1;
+String TravelStr;
+long TravelX;
+long TravelY;
+long currTX;
+long currTY;
+int maxStepsX = 10000;
+int maxStepsY = 10000;
+long currX = -1;
+long currY = -1;
+
+// Servos
+Servo paint1;
 Servo paint2;
 Servo paint3;
 Servo paint4;
 Servo paint5;
 
+int pos = 0;
+int maxPos = 90;
+int activeBrush = -1;
+int isDown = false;
+int color = -1;
+
+// serial communication
+String temp = "";
+char eos;
+String bos;
+char tempC;
+byte incoming_byte;
+int commandCount = 0;
+
+//LCD
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+String song = "";
+void house(){
+  for (int i = 1; i <= 5 ; i++) {
+    activeBrush = i;
+    moveServoUp();
+  }
+  pinMode(home_switchX, INPUT_PULLUP);
+  delay(15);
+  
+
+  stepperX.setMaxSpeed(100.0);
+  stepperX.setAcceleration(100.0);
+
+
+  while (digitalRead(home_switchX)) {  // Make the Stepper move CCW until the switch is activated
+    stepperX.moveTo(initial_homing);  // Set the position to move to
+    initial_homing--;  // Decrease by 1 for next move if needed
+    stepperX.run();  // Start moving the stepper
+    delay(5);
+  }
+
+  stepperX.setCurrentPosition(0);  // Set the current position as zero for now
+  stepperX.setMaxSpeed(1000.0);    // Set Max Speed of Stepper (Slower to get better accuracy)
+  stepperX.setAcceleration(1000.0); // Set Acceleration of Stepper
+  initial_homing = 1;
+
+  while (!digitalRead(home_switchX)) { // Make the Stepper move CW until the switch is deactivated
+    stepperX.moveTo(initial_homing);
+    stepperX.run();
+    initial_homing++;
+    delay(5);
+  }
+
+  stepperX.setCurrentPosition(0);
+  Serial.println("Homing X Completed");
+  stepperX.setMaxSpeed(500.0);      // Set Max Speed of Stepper (Faster for regular movements)
+  stepperX.setAcceleration(500.0);  // Set Acceleration of Stepper
+
+  initial_homing = -1;
+  pinMode(home_switchY, INPUT_PULLUP);
+  delay(50);
+
+  stepperY.setMaxSpeed(1000);
+  stepperY.setAcceleration(1000.0);
+
+  while (digitalRead(home_switchY)) {  // Make the Stepper move CCW until the switch is activated
+    stepperY.moveTo(initial_homing);  // Set the position to move to
+    initial_homing--;  // Decrease by 1 for next move if needed
+    stepperY.run();  // Start moving the stepper
+    delay(5);
+  }
+
+  stepperY.setCurrentPosition(0);  // Set the current position as zero for now
+  stepperY.setMaxSpeed(500.0);    // Set Max Speed of Stepper (Slower to get better accuracy)
+  stepperY.setAcceleration(500.0); // Set Acceleration of Stepper
+  initial_homing = 1;
+
+  while (!digitalRead(home_switchY)) { // Make the Stepper move CW until the switch is deactivated
+    stepperY.moveTo(initial_homing);
+    stepperY.run();
+    initial_homing++;
+    delay(5);
+  }
+
+  stepperY.setCurrentPosition(0);
+  Serial.println("Homing Y Completed");
+  stepperY.setMaxSpeed(500.0);      // Set Max Speed of Stepper (Faster for regular movements)
+  stepperY.setAcceleration(500.0);  // Set Acceleration of Stepper
+
+  Serial.println("Enter Travel distance (Positive for CW / Negative for CCW and Zero for back to Home): ");
+}
 void setup() {
+  Serial.begin(115200);
+  delay(5);
+  Serial.println("Stepper is Homing . . . . . . . . . . . ");
   // put your setup code here, to run once:
+  // Set the maximum speed in steps per second:
   paint1.attach(paint1pin);
   paint2.attach(paint2pin);
   paint3.attach(paint3pin);
   paint4.attach(paint4pin);
   paint5.attach(paint5pin);
 
-  Serial.begin(9600);
-}
-int maxPos = 150; 
+  // Move them all up
 
-void moveServoDown(int activeBrush) {
+
+  house();
+
+
+}
+void moveServoDown() {
   if (activeBrush == 1) {
-   
-      paint1.write(0);
-      // tell servo to go to position in variable 'pos'
-      delay(15);                       // waits 15ms for the servo to reach the position
-    
+    paint1.write(180);
+
   }
   else if (activeBrush == 2) {
-    for (pos = 0; pos <= maxPos; pos += 1) // goes from 0 degrees to 180 degrees
-    { // in steps of 1 degree
-      paint2.write(pos);
-      // tell servo to go to position in variable 'pos'
-      delay(15);                       // waits 15ms for the servo to reach the position
-    }
+    paint2.write(180);
   }
   else if (activeBrush == 3) {
-    for (pos = 180; pos >= 180 - maxPos; pos -= 1) // goes from 0 degrees to 180 degrees
-    { // in steps of 1 degree
-      paint3.write(pos);
-      // tell servo to go to position in variable 'pos'
-      delay(15);                       // waits 15ms for the servo to reach the position
-    }
+    paint3.write(0);
+
   }
   else if (activeBrush == 4) {
-    for (pos = 180; pos >= 180 - maxPos; pos -= 1) // goes from 0 degrees to 180 degrees
-    { // in steps of 1 degree
-      paint4.write(pos);
-      // tell servo to go to position in variable 'pos'
-      delay(15);                       // waits 15ms for the servo to reach the position
-    }
+    paint4.write(0);
+
   }
   else if (activeBrush == 5) {
-      paint5.write(60);
-      // tell servo to go to position in variable 'pos'
-      delay(15);                       // waits 15ms for the servo to reach the position
-   
+    paint5.write(0);
+  }
+  delay(25);
+}
+
+void moveServoUp() {
+  if (activeBrush == 1) { // goes from 180 degrees to 0 degrees
+    paint1.write(0);              // tell servo to go to position in variable 'pos'
+
+  }
+  if (activeBrush == 2) {
+    paint2.write(0);              // tell servo to go to position in variable 'pos'
+    // waits 15ms for the servo to reach the position
+
+  }
+  else if (activeBrush == 3) { // goes from 180 degrees to 0 degrees
+    paint3.write(180);              // tell servo to go to position in variable 'pos
+  }
+  else if (activeBrush == 4) {
+    // goes from 180 degrees to 0 degrees
+    paint4.write(180);              // tell servo to go to position in variable 'pos'
+
+  }
+  else if (activeBrush == 5) {
+    // goes from 180 degrees to 0 degrees
+    paint5.write(180);              // tell servo to go to position in variable 'pos'
+  }
+  delay(25);
+
+}
+void moveStepper() {
+  Serial.println("MOVING");
+  move_finished = 0; // Set variable for checking move of the Stepper
+  Serial.print(TravelX);
+  Serial.print(" ");
+  Serial.println(TravelY);
+  if (TravelX > maxStepsX || TravelY > maxStepsY) {  // Make sure the position entered is not beyond the HOME or MAX position
+    Serial.println("");
+    Serial.println("Please enter a value greater than zero and smaller or equal to 1350.....");
+    Serial.println("");
+  }
+  else {
+    // Valid command
+    if (TravelX != 0) {
+      Serial.print("Moving stepperX into position: ");
+      Serial.println(TravelX);
+      stepperX.moveTo(TravelX); // Set new moveto position of Stepper
+      delay(1000);  // Wait 1 seconds before moving the Stepper
+      //set speed
+
+    }
+    if (TravelY != 0) {
+      Serial.print("Moving stepperY into position: ");
+      Serial.println(TravelY);
+      stepperY.moveTo(TravelY);
+      delay(1000);
+    }
+//     float diffy = abs(currTY - TravelY);
+//     float diffx = abs(currTX - TravelX);
+//     if (diffx!= diffy) {
+//      Serial.print("Diff");
+//      Serial.print(diffx);
+//      Serial.print(",");
+//      Serial.print(diffy);
+//      if (diffx > diffx) {
+//        stepperX.setMaxSpeed(1000.0);    // Set Max Speed of Stepper (Slower to get better accuracy)
+//        float newSpeed = 1000.0 * (diffy / diffx) ;
+//        Serial.print("speed");
+//        Serial.println(newSpeed);
+//        stepperY.setMaxSpeed(newSpeed);    // Set Max Speed of Stepper (Slower to get better accuracy)
+//
+//      }
+//      else {
+//        stepperY.setMaxSpeed(1000.0);    // Set Max Speed of Stepper (Slower to get better accuracy)
+//        float newSpeed = 1000.0 * (diffx / diffy) ;
+//        Serial.print("speed");
+//        Serial.println(newSpeed);
+//        stepperX.setMaxSpeed(newSpeed);    // Set Max Speed of Stepper (Slower to get better accuracy)
+//
+//        
+//      }
+//    }
+//    else {
+//      stepperY.setMaxSpeed(1000.0);
+//      stepperX.setMaxSpeed(1000.0);
+//    }
+  }
+  while (move_finished != 1) {
+    // Check if valid
+    if ((TravelX >= 0 && TravelX <= maxStepsX)) {
+
+      // Check if the Stepper has reached desired position
+      if ((stepperX.distanceToGo() != 0)) {
+        stepperX.run();  // Move Stepper into position
+
+      }
+      // Check if the Stepper has reached desired position
+      if ((stepperY.distanceToGo() != 0)) {
+        stepperY.run();  // Move Stepper into position
+      }
+
+      // If move is completed display message on Serial Monitor
+      if ((move_finished == 0) && (stepperX.distanceToGo() == 0) &&  (stepperY.distanceToGo() == 0)) {
+        currTX = TravelX;
+        currTY = TravelY;
+        move_finished = 1; // Reset move variable
+      }
+    }
   }
 }
 
-void moveServoUp(int activeBrush) {
-  if (activeBrush == 1) {
-    for (pos = maxPos; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
-      paint1.write(pos);              // tell servo to go to position in variable 'pos'
-      delay(15);                       // waits 15ms for the servo to reach the position
-    }
-  }
-  if (activeBrush == 2) {
-    for (pos = maxPos; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
-      paint2.write(pos);              // tell servo to go to position in variable 'pos'
-      delay(15);                       // waits 15ms for the servo to reach the position
-    }
-  }
-  else if (activeBrush == 3) {
-    for (pos = 180  - maxPos; pos <= 180  ; pos += 1) { // goes from 180 degrees to 0 degrees
-      paint3.write(pos);              // tell servo to go to position in variable 'pos'
-      delay(15);                       // waits 15ms for the servo to reach the position
-    }
-  }
-    else if (activeBrush == 4) {
-    for (pos = 180  - maxPos; pos <= 180  ; pos += 1) { // goes from 180 degrees to 0 degrees
-      paint4.write(pos);              // tell servo to go to position in variable 'pos'
-      delay(15);                       // waits 15ms for the servo to reach the position
-    }
-  }
-   else if (activeBrush == 5) {
-    // goes from 180 degrees to 0 degrees
-      paint5.write(180);              // tell servo to go to position in variable 'pos'
-  }
-
+void changeColor() {
+  // based on color move to palette spot
+  TravelX = 1000;
+  TravelY = 1;
+  moveStepper();
+  delay(30);
+  moveServoDown();
+  delay(5000);
+  moveServoUp();
+  TravelX = 1000; 
+  TravelY = 250;
+  moveStepper();
+  moveServoDown();
 }
 
 void loop() {
+  //  SQUARE M,10,10. S,1., M,20,10. M,20,20.  M,10,20. M,10,10.
+  while (Serial.available() > 0)  { // Check if values are available in the Serial Buffer
+    incoming_byte = Serial.read();
+    tempC = char(incoming_byte);
+    Serial.print(tempC);
+    Serial.print("\n");
+    if (tempC == 'M' || tempC == 'S' || tempC == 'X' || tempC == 'C') { // X: move in x axis, Y: move in Y axis, S: stop drawing
+      if (commandCount == 1) {
+        Serial.write("Done");
+        commandCount = 0;
+      }
+      commandCount += 1;
+      bos.concat(tempC);
+    } else if (char(incoming_byte) == '.') {
+      eos = '.';
+    } else if (tempC != '\n' ) {
+      temp.concat(tempC);
+    }
+    if (eos == '.') {
+      if (bos.charAt(0) == 'M') {
+        //M,[x],[y];
+        String moveCommand = temp.substring(1);
+        int sliceID = moveCommand.indexOf(",");
+        TravelX = moveCommand.substring(0, sliceID).toInt();
+        TravelY = moveCommand.substring(sliceID + 1, moveCommand.length()).toInt();
+        moveStepper();
+        Serial.print("move");
+        Serial.print(TravelX) ;
+        Serial.print(" ");
+        Serial.print(TravelY) ;
+        bos = "";
+        Serial.print("COMPLETED\n");
+ 
+      }
+      else if (bos.charAt(0) == 'X') {
+        // X.
+        Serial.print("Stop");
+          // Move them all up
+          for (int i = 1; i <= 5 ; i++) {
+            activeBrush = i;
+            moveServoUp();
+          }
+        bos = "";
+        Serial.print("COMPLETED");
+ 
+      }
+      else if (bos.charAt(0) == 'S') {
+        // switch pen
+        // S,[brush#].
+        // move old brush up
+        moveServoUp();
+        activeBrush = temp.substring(1, 2).toInt();
+        // move new brush down
+        moveServoDown();
+        bos = "";
 
-    moveServoUp(3);
-    delay(1000);
-    moveServoDown(3);
-        delay(1000);
-    moveServoUp(4);
-    delay(1000);
-    moveServoDown(4);
-        delay(1000);
-    moveServoUp(5);
-    delay(1000);
-    moveServoDown(5);
-        delay(1000);
-  
+        Serial.print("Switch");
+        Serial.print(activeBrush);
+        Serial.print("COMPLETED");
+ 
 
+
+      }
+      else if (bos.charAt(0) == 'C') {
+        // home it 
+        house();
+        //C, [brush#], [color#].
+        String changeColorCommand = temp.substring(1);
+        int sliceID = changeColorCommand.indexOf(",");
+        activeBrush = changeColorCommand.substring(0, sliceID).toInt();
+        color = changeColorCommand.substring(sliceID + 1, changeColorCommand.length()).toInt();
+        Serial.print("Color");
+        Serial.print(activeBrush) ;
+        if(activeBrush == 0) {
+          activeBrush = 1;
+        }
+        Serial.print(",") ;
+        Serial.print(color) ;
+        Serial.print("\n");
+        changeColor();
+        bos = "";
+        
+        Serial.print("COMPLETED");
+
+      }
+      temp = "";
+      eos = 'a';
+
+    }
+  }
 }

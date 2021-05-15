@@ -15,8 +15,8 @@ import time
 
 from scipy.interpolate import interp1d
 
-# arduino = Serial(port='/dev/cu.usbserial-021FEBDC',
-#                  baudrate=115200, timeout=.1)
+arduino = Serial(port='/dev/cu.usbserial-021FEBDC',
+                 baudrate=115200, timeout=.1)
 fps = 60
 time_delta = 1./fps
 
@@ -375,16 +375,14 @@ def main():
     # text_file = open("testCommand2.txt", "r")
     # commands = text_file.read().split('\', \'')
 
-    # Test 3 - 731 commands with 20 coordinates
-    # text_file = open("testCommand3.txt", "r")
-    # commands = text_file.read().split('\', \'')
-    # commands[len(commands)-1] = 'X.'
-    # commands[0] = 'S,2.'
+    # Test 3
+    text_file = open("testCommand3.txt", "r")
+    commands = text_file.read().split('\', \'')
 
-    # print("sending")
-    # while True:
-    #     value = send_commands(commands)
-    #     print(value)
+    print("sending")
+    while True:
+        value = send_commands(commands)
+        print(value)
 
     # print(len(coordinates))
     # print(coordinates[:100])
